@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Custom Pipecat Voice UI</title>
+</head>
+<body>
+  <h1>🎙️ Talk to Pipecat</h1>
+  <button id="start">Start Conversation</button>
+  <audio id="botAudio" controls autoplay></audio>
+
+  <script>
+    let ws, mediaRecorder;
+
+    document.getElementById("start").onclick = async () => {
+      ws = new WebSocket("ws://localhost:8080");
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = async () => {
+        console.log("Connected to backend ✅");
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+        mediaRecorder.ondataavailable = (event) => {
+          event.data.arrayBuffer().then(buffer => {
+            ws.send(buffer);
+          });
+        };
+        mediaRecorder.start(250); // send audio chunks every 250ms
+      };
+
+      // Receive bot's TTS audio back and play
+      const audioCtx = new AudioContext();
+      const source = audioCtx.createBufferSource();
+      const audioQueue = [];
+
+      ws.onmessage = async (event) => {
+        const arrayBuffer = event.data;
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+        const playSource = audioCtx.createBufferSource();
+        playSource.buffer = audioBuffer;
+        playSource.connect(audioCtx.destination);
+        playSource.start();
+      };
+    };
+  </script>
+</body>
+</html>
