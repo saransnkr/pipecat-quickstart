@@ -1,0 +1,5 @@
+mcp==1.19.0
+google-api-python-client==2.185.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.2
+uvicorn==0.38.0
